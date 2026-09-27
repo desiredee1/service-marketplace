@@ -1,8 +1,40 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { cloneElement } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <div className={cn('rounded-2xl border border-slate-200 bg-white p-5 shadow-sm', className)}>{children}</div>
-  );
+const buttonVariants = cva(
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-slate-900 text-white hover:bg-slate-800',
+        outline: 'border border-slate-200 bg-white text-slate-900 hover:bg-slate-50',
+        secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
+        ghost: 'text-slate-900 hover:bg-slate-100'
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 px-3',
+        lg: 'h-11 px-8 py-2'
+      }
+    },
+    defaultVariants: { variant: 'default', size: 'default' }
+  }
+);
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  children?: ReactNode;
+}
+
+export function Button({ className, variant, size, asChild = false, children, ...props }: ButtonProps) {
+  const classes = cn(buttonVariants({ variant, size, className }));
+
+  if (asChild) {
+    const child = children as ReactElement<{ className?: string }>;
+    return cloneElement(child, { className: cn(classes, child.props.className) });
+  }
+
+  return <button className={classes} {...props}>{children}</button>;
 }
