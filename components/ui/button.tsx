@@ -1,9 +1,10 @@
-import type { ComponentPropsWithoutRef, ElementType } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { cloneElement } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -15,28 +16,25 @@ const buttonVariants = cva(
       size: {
         default: 'h-10 px-4 py-2',
         sm: 'h-9 px-3',
-        lg: 'h-11 px-8'
+        lg: 'h-11 px-8 py-2'
       }
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default'
-    }
+    defaultVariants: { variant: 'default', size: 'default' }
   }
 );
 
-export interface ButtonProps extends ComponentPropsWithoutRef<'button'>, VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  as?: ElementType;
+  children?: ReactNode;
 }
 
-export function Button({ className, variant, size, asChild = false, as: Component = 'button', ...props }: ButtonProps) {
-  const Comp = Component;
+export function Button({ className, variant, size, asChild = false, children, ...props }: ButtonProps) {
+  const classes = cn(buttonVariants({ variant, size, className }));
 
-  return (
-    <Comp
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+  if (asChild) {
+    const child = children as ReactElement<{ className?: string }>;
+    return cloneElement(child, { className: cn(classes, child.props.className) });
+  }
+
+  return <button className={classes} {...props}>{children}</button>;
 }
