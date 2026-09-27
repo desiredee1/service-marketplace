@@ -1,28 +1,134 @@
-import { CustomerRequestForm } from '@/features/market/customer-request-form';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { CheckCircle2, Clock3, MapPin, Star, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { CheckCircle2, Clock3, MapPin } from 'lucide-react';
+import { getProviderLeads, updateProviderLeadStatus } from '@/features/market/mock-api';
+import type { ProviderLead } from '@/features/market/types';
 
-const customerSteps = ['Pick a service category', 'Describe your job', 'Get matched with nearby providers', 'Accept the best option and get scheduled'];
+export function ProviderDashboard() {
+  const [leads, setLeads] = useState<ProviderLead[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function CustomerPage() {
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setLeads(getProviderLeads());
+      setLoading(false);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const handleDecision = (leadId: string, status: 'accepted' | 'declined') => {
+    setLeads((current) => current.map((lead) => (lead.leadId === leadId ? { ...lead, status } : lead)));
+    updateProviderLeadStatus(leadId, status);
+  };
+
+  if (loading) {
+    return (
+      <section className="space-y-4">
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="animate-pulse rounded-2xl border border-slate-200 bg-slate-100 p-6">
+            <div className="h-4 w-32 rounded bg-slate-200" />
+            <div className="mt-4 h-7 w-48 rounded bg-slate-200" />
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="h-16 rounded-xl bg-slate-200" />
+              <div className="h-16 rounded-xl bg-slate-200" />
+              <div className="h-16 rounded-xl bg-slate-200" />
+            </div>
+          </div>
+        ))}
+      </section>
+    );
+  }
+
+  if (leads.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-slate-600">
+        No active leads right now. New customer requests will appear here.
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-soft">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-600">Customer portal</p>
-        <h1 className="mt-3 text-4xl font-black text-slate-900">Book a trusted local service</h1>
-        <p className="mt-3 max-w-2xl text-slate-600">Tell us what you need once. We validate the request before it enters the matching flow.</p>
-      </section>
+    <section className="grid gap-5">
+      {leads.map((lead) => (
+        <Card key={lead.id} className="p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-slate-900">{lead.providerName}</h2>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    lead.status === 'accepted'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : lead.status === 'declined'
+                        ? 'bg-rose-50 text-rose-700'
+                        : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {lead.status}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                {lead.profession} • {lead.matchScore}% platform match
+              </p>
+            </div>
 
-      <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="p-6"><h2 className="text-2xl font-bold text-slate-900">What do you need help with?</h2><CustomerRequestForm /></Card>
-        <Card className="p-6"><h3 className="text-xl font-bold text-slate-900">How it works</h3><div className="mt-5 space-y-4">{customerSteps.map((step, index) => <div key={step} className="flex gap-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{index + 1}</div><p className="pt-1 text-sm text-slate-700">{step}</p></div>)}</div></Card>
-      </section>
+            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+              {lead.rating}
+            </div>
+          </div>
 
-      <section className="grid gap-5 md:grid-cols-3">
-        <Card className="p-5"><MapPin className="h-8 w-8 text-sky-600" /><h3 className="mt-3 text-lg font-bold">Location-aware matching</h3><p className="mt-2 text-sm text-slate-600">Find nearby experts faster and reduce irrelevant leads.</p></Card>
-        <Card className="p-5"><CheckCircle2 className="h-8 w-8 text-emerald-600" /><h3 className="mt-3 text-lg font-bold">Quality controls</h3><p className="mt-2 text-sm text-slate-600">Clear descriptions and validation create higher trust.</p></Card>
-        <Card className="p-5"><Clock3 className="h-8 w-8 text-amber-500" /><h3 className="mt-3 text-lg font-bold">Urgency-aware flow</h3><p className="mt-2 text-sm text-slate-600">Emergency requests can be prioritised without making every request chaotic.</p></Card>
-      </section>
-    </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <div className="flex items-center gap-2 text-slate-600">
+                <MapPin className="h-4 w-4 text-sky-600" />
+                Distance
+              </div>
+              <p className="mt-2 text-lg font-bold text-slate-900">{lead.distanceKm} km</p>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3">
+              <div className="flex items-center gap-2 text-slate-600">
+                <Clock3 className="h-4 w-4 text-amber-600" />
+                Response
+              </div>
+              <p className="mt-2 text-lg font-bold text-slate-900">{lead.responseTime}</p>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 p-3">
+              <div className="flex items-center gap-2 text-slate-600">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                Status
+              </div>
+              <p className="mt-2 text-lg font-bold text-slate-900">{lead.status}</p>
+            </div>
+          </div>
+
+          {lead.status === 'pending' && (
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => handleDecision(lead.leadId, 'accepted')}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Accept lead
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDecision(lead.leadId, 'declined')}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <XCircle className="h-4 w-4" />
+                Decline lead
+              </button>
+            </div>
+          )}
+        </Card>
+      ))}
+    </section>
   );
 }
